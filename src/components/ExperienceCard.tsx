@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Clock, MapPin } from "lucide-react";
 import type { Experience } from "@/lib/types";
+import { useCurrency } from "@/lib/currency";
 
 export function ExperienceCard({ experience }: { experience: Experience }) {
   const { slug, title, shortDescription, price, duration, rating, location, thumbnail } =
     experience;
+  const { convert } = useCurrency();
 
   return (
     <Link href={`/experiences/${slug}`} className="group block">
@@ -66,7 +70,7 @@ export function ExperienceCard({ experience }: { experience: Experience }) {
             </div>
 
             <div className="font-heading font-bold text-navy">
-              {price.display}
+              {convert(price.amount, price.currency)}
             </div>
           </div>
         </div>

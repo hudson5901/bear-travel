@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Search, Globe } from "lucide-react";
+import { Menu, X, Search, Globe, DollarSign } from "lucide-react";
 import { BearLogo } from "./BearMascot";
 import { useI18n } from "@/i18n/context";
 import { LOCALES, LOCALE_NAMES } from "@/i18n/translations";
+import { useCurrency, CURRENCIES } from "@/lib/currency";
 
 const NAV_KEYS = [
   { href: "/experiences", key: "nav.experiences" as const },
@@ -16,7 +17,9 @@ const NAV_KEYS = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [currOpen, setCurrOpen] = useState(false);
   const { locale, setLocale, t } = useI18n();
+  const { currency, setCurrency } = useCurrency();
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
@@ -52,10 +55,36 @@ export function Navbar() {
               <Search className="w-5 h-5" />
             </Link>
 
+            {/* Currency Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => { setCurrOpen(!currOpen); setLangOpen(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-navy/60 hover:text-orange rounded-lg hover:bg-cream transition-colors"
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>{currency}</span>
+              </button>
+              {currOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-cream-dark py-1 min-w-[100px] z-50">
+                  {CURRENCIES.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => { setCurrency(c); setCurrOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-cream transition-colors ${
+                        c === currency ? "text-orange font-medium" : "text-navy/70"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Language Switcher */}
             <div className="relative">
               <button
-                onClick={() => setLangOpen(!langOpen)}
+                onClick={() => { setLangOpen(!langOpen); setCurrOpen(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-navy/60 hover:text-orange rounded-lg hover:bg-cream transition-colors"
               >
                 <Globe className="w-4 h-4" />

@@ -3,6 +3,7 @@ import { Poppins, Inter } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { I18nProvider } from "@/i18n/context";
+import { CurrencyProvider } from "@/lib/currency";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -50,9 +51,11 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col bg-cream text-navy antialiased">
         <I18nProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <CurrencyProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </CurrencyProvider>
         </I18nProvider>
       </body>
     </html>

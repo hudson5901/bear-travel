@@ -9,9 +9,11 @@ import {
   ArrowLeft,
   Check,
 } from "lucide-react";
-import { getExperienceBySlug, getExperiences } from "@/lib/data";
+import { getExperienceBySlug, getExperiences, getExperiencesByCity } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { ExperienceJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
+import { ExperienceCard } from "@/components/ExperienceCard";
+import { Comments } from "@/components/Comments";
 
 export async function generateStaticParams() {
   return getExperiences().map((e) => ({ slug: e.slug }));
@@ -200,6 +202,9 @@ export default async function ExperienceDetailPage({
               />
             </div>
           </div>
+
+          {/* Comments */}
+          <Comments experienceSlug={experience.slug} />
         </div>
 
         {/* Sidebar - Booking card */}
@@ -251,6 +256,26 @@ export default async function ExperienceDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Similar Experiences */}
+      {(() => {
+        const similar = getExperiencesByCity(experience.location.citySlug)
+          .filter((e) => e.slug !== experience.slug)
+          .slice(0, 4);
+        if (similar.length === 0) return null;
+        return (
+          <div className="mt-12 pt-8 border-t border-cream-dark">
+            <h2 className="font-heading text-2xl font-bold text-navy mb-6">
+              More experiences in {experience.location.city}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similar.map((exp) => (
+                <ExperienceCard key={exp.id} experience={exp} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
