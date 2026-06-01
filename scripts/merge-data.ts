@@ -81,12 +81,16 @@ function main() {
 
   const viatorData = loadJSON<RawExperience[]>("viator-raw.json");
   const gygData = loadJSON<RawExperience[]>("getyourguide-raw.json");
+  const asoviewData = loadJSON<RawExperience[]>("asoview-raw.json");
+  const newBatchData = loadJSON<RawExperience[]>("batch-new-sites.json");
   const themes = loadJSON<ThemeConfig[]>("themes.json");
 
   console.log(`  Viator: ${viatorData.length} experiences`);
   console.log(`  GetYourGuide: ${gygData.length} experiences`);
+  console.log(`  Asoview: ${asoviewData.length} experiences`);
+  console.log(`  New batch (veltra, activityjapan, byfood, etc): ${newBatchData.length} experiences`);
 
-  const combined = [...viatorData, ...gygData];
+  const combined = [...viatorData, ...gygData, ...asoviewData, ...newBatchData];
   const deduped = deduplicateByTitle(combined);
   console.log(`  After dedup: ${deduped.length} experiences`);
 

@@ -38,6 +38,11 @@ const CITY_MAP: Record<string, { slug: string; region: string }> = {
   "Hiroshima": { slug: "hiroshima", region: "Chugoku" },
   "Nara": { slug: "nara", region: "Kansai" },
   "Hakone": { slug: "hakone", region: "Kanto" },
+  "Nagano": { slug: "nagano", region: "Chubu" },
+  "Hokkaido": { slug: "hokkaido", region: "Hokkaido" },
+  "Okinawa": { slug: "okinawa", region: "Okinawa" },
+  "Niigata": { slug: "niigata", region: "Chubu" },
+  "Various": { slug: "tokyo", region: "Kanto" },
 };
 
 // Theme detection keywords
@@ -280,6 +285,82 @@ function processJalan(): CleanExperience[] {
   });
 }
 
+function processNewBatch(): CleanExperience[] {
+  const filePath = join(DATA_DIR, "batch-new-sites.json");
+  if (!existsSync(filePath)) {
+    console.log("  ⚠️ batch-new-sites.json not found");
+    return [];
+  }
+
+  const raw = JSON.parse(readFileSync(filePath, "utf-8")) as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    shortDescription: string;
+    price: { amount: number; currency: string; display: string };
+    duration: { hours: number; display: string };
+    rating: { score: number; count: number };
+    images: string[];
+    thumbnail: string;
+    location: { city: string; citySlug: string; region: string };
+    categories: string[];
+    themes: string[];
+    highlights: string[];
+    source: { platform: string; url: string; productId: string; lastScraped: string };
+    bookingUrl: string;
+    isPopular: boolean;
+    isFeatured: boolean;
+  }>;
+
+  console.log(`  New batch raw: ${raw.length} items`);
+
+  return raw
+    .filter(item => item.title && item.title.length >= 5)
+    .map((item) => {
+      const city = item.location?.city || "Tokyo";
+      const cityInfo = CITY_MAP[city] || CITY_MAP["Tokyo"];
+      const priceAmount = item.price?.amount || 0;
+      const priceUSD = item.price?.currency === "JPY" && priceAmount > 0
+        ? Math.round(priceAmount / JPY_USD_RATE)
+        : priceAmount || 20;
+
+      return {
+        id: item.id || `${item.source.platform}-${cityInfo.slug}-${simpleHash(item.title)}`,
+        slug: item.slug || `${cityInfo.slug}-${slugify(item.title)}`,
+        title: item.title,
+        description: item.description || "",
+        shortDescription: item.shortDescription || "",
+        price: {
+          amount: priceUSD || 20,
+          currency: "USD",
+          display: `$${priceUSD || 20}`,
+        },
+        duration: item.duration || { hours: 2, display: "Varies" },
+        rating: item.rating || { score: 4.0, count: 0 },
+        images: item.images || [],
+        thumbnail: item.thumbnail || (item.images?.[0] || ""),
+        location: {
+          city,
+          citySlug: cityInfo.slug,
+          region: cityInfo.region,
+        },
+        categories: item.categories || [],
+        themes: detectThemes(item.title, (item.categories || []).join(" ")),
+        highlights: item.highlights || [],
+        source: item.source || {
+          platform: "unknown",
+          url: item.bookingUrl || "",
+          productId: "",
+          lastScraped: new Date().toISOString(),
+        },
+        bookingUrl: item.bookingUrl || item.source?.url || "",
+        isPopular: item.isPopular || false,
+        isFeatured: false,
+      };
+    });
+}
+
 function main() {
   console.log("🐻 Building final database from all sources\n");
 
@@ -292,8 +373,12 @@ function main() {
   const jalanExps = processJalan();
   console.log(`  ✓ ${jalanExps.length} clean experiences\n`);
 
+  console.log("📥 Processing New Batch (veltra, activityjapan, byfood, etc)...");
+  const newBatchExps = processNewBatch();
+  console.log(`  ✓ ${newBatchExps.length} clean experiences\n`);
+
   // Combine all
-  const allExperiences = [...asoviewExps, ...jalanExps];
+  const allExperiences = [...asoviewExps, ...jalanExps, ...newBatchExps];
   console.log(`📊 Total experiences: ${allExperiences.length}`);
 
   // Save merged JSON
@@ -345,17 +430,64 @@ function importToDb(experiences: CleanExperience[]) {
   sqlite.exec("DELETE FROM experiences");
   console.log("  Cleared existing data");
 
+  // Ensure new destinations exist
+  const existingDests = sqlite.prepare("SELECT slug FROM destinations").all() as { slug: string }[];
+  const destSlugs = new Set(existingDests.map(d => d.slug));
+  const newDests = [
+    { name: "Nagano", slug: "nagano", region: "Chubu", country: "Japan", description: "Mountain prefecture famous for snow, onsen, and traditional crafts", lat: 36.6513, lng: 138.1810 },
+    { name: "Hokkaido", slug: "hokkaido", region: "Hokkaido", country: "Japan", description: "Japan's northern island with stunning nature and fresh seafood", lat: 43.0642, lng: 141.3469 },
+    { name: "Okinawa", slug: "okinawa", region: "Okinawa", country: "Japan", description: "Tropical islands with unique culture and beautiful beaches", lat: 26.3344, lng: 127.8056 },
+    { name: "Niigata", slug: "niigata", region: "Chubu", country: "Japan", description: "Rice country known for sake brewing and fermentation culture", lat: 37.9026, lng: 139.0232 },
+  ];
+  for (const d of newDests) {
+    if (!destSlugs.has(d.slug)) {
+      sqlite.prepare("INSERT INTO destinations (name, slug, level, region, country, description, latitude, longitude, experience_count) VALUES (?, ?, 'city', ?, ?, ?, ?, ?, 0)")
+        .run(d.name, d.slug, d.region, d.country, d.description, d.lat, d.lng);
+    }
+  }
+
   // Ensure platforms exist
   const existingPlatforms = sqlite.prepare("SELECT slug FROM platforms").all() as { slug: string }[];
   const platformSlugs = new Set(existingPlatforms.map(p => p.slug));
 
   if (!platformSlugs.has("asoview")) {
-    sqlite.prepare("INSERT INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
       .run("Asoview", "asoview", "アソビュー", "https://www.asoview.com", "scraper", 3.0);
   }
   if (!platformSlugs.has("jalan")) {
-    sqlite.prepare("INSERT INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
       .run("Jalan", "jalan", "じゃらん", "https://www.jalan.net", "scraper", 2.0);
+  }
+  if (!platformSlugs.has("veltra")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("Veltra", "veltra", "ベルトラ", "https://www.veltra.com", "scraper", 3.0);
+  }
+  if (!platformSlugs.has("activityjapan")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("ActivityJapan", "activityjapan", "アクティビティジャパン", "https://activityjapan.com", "scraper", 3.0);
+  }
+  if (!platformSlugs.has("byfood")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("byFood", "byfood", "byFood", "https://www.byfood.com", "scraper", 3.0);
+  }
+  if (!platformSlugs.has("airkitchen")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("AirKitchen", "airkitchen", "AirKitchen", "https://airkitchen.me", "scraper", 3.0);
+  }
+  if (!platformSlugs.has("go-nagano")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("Go-Nagano", "go-nagano", "Go NAGANO", "https://www.go-nagano.net", "scraper", 0);
+  }
+  if (!platformSlugs.has("magical-trip")) {
+    sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+      .run("MagicalTrip", "magical-trip", "Magical Trip", "https://www.magical-trip.com", "scraper", 3.0);
+  }
+  const misoSlugs = ["misokengaku", "ishiimiso", "minemurashouten", "misogura"];
+  for (const ms of misoSlugs) {
+    if (!platformSlugs.has(ms)) {
+      sqlite.prepare("INSERT OR IGNORE INTO platforms (name, slug, display_name, base_url, api_type, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)")
+        .run(ms, ms, ms, `https://${ms}.com`, "scraper", 0);
+    }
   }
 
   // Get platform IDs

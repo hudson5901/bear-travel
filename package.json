@@ -11,8 +11,9 @@
     "scrape:gyg": "tsx scripts/scrape-getyourguide.ts",
     "scrape:asoview": "tsx scripts/scrape-asoview.ts",
     "scrape:merge": "tsx scripts/merge-data.ts",
+    "scrape:new-batch": "tsx scripts/scrape-batch-new-sites.ts",
     "db:build": "tsx scripts/build-final-db.ts",
-    "scrape": "npm run scrape:viator && npm run scrape:gyg && npm run scrape:asoview && npm run scrape:merge"
+    "scrape": "npm run scrape:viator && npm run scrape:gyg && npm run scrape:asoview && npm run scrape:new-batch && npm run scrape:merge"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
