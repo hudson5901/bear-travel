@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Star, Clock, MapPin } from "lucide-react";
 import type { Experience } from "@/lib/types";
 
@@ -12,10 +13,12 @@ export function ExperienceCard({ experience }: { experience: Experience }) {
         {/* Image */}
         <div className="relative aspect-[4/3] bg-cream-dark overflow-hidden">
           {thumbnail ? (
-            <img
+            <Image
               src={thumbnail}
               alt={title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange/20 to-navy/10">

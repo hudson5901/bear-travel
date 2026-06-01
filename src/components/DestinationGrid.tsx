@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, MapPin } from "lucide-react";
 import { getDestinations } from "@/lib/data";
 
@@ -35,10 +36,12 @@ export function DestinationGrid() {
               {/* Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-light to-navy">
                 {dest.image && (
-                  <img
+                  <Image
                     src={dest.image}
                     alt={dest.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />

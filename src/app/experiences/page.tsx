@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getExperiences, getDestinations, getThemes } from "@/lib/data";
+import { getExperiencesSlim, getDestinations, getThemes } from "@/lib/data";
 import { ExperiencesPageClient } from "@/components/ExperiencesPageClient";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function ExperiencesPage() {
-  const allExperiences = getExperiences();
+  const allExperiences = getExperiencesSlim();
   const destinations = getDestinations();
   const themes = getThemes();
 

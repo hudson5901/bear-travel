@@ -1,7 +1,7 @@
 export const SITE_NAME = "Bear Tour";
 export const SITE_DESCRIPTION =
   "Discover the best tours and experiences across Japan. Curated from top providers, guided by our friendly bear mascot.";
-export const SITE_URL = "https://beartour.jp";
+export const SITE_URL = "https://bear-travel.vercel.app";
 
 export const CITIES = [
   "Tokyo",

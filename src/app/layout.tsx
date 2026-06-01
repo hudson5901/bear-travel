@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Inter } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { I18nProvider } from "@/i18n/context";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   },
   description:
     "Discover the best tours and experiences across Japan. Curated from top providers, guided by our friendly bear mascot.",
-  metadataBase: new URL("https://beartour.jp"),
+  metadataBase: new URL("https://bear-travel.vercel.app"),
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -48,9 +49,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col bg-cream text-navy antialiased">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <I18nProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </I18nProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Star,
   Clock,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import { getExperienceBySlug, getExperiences } from "@/lib/data";
 import { notFound } from "next/navigation";
+import { ExperienceJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
 
 export async function generateStaticParams() {
   return getExperiences().map((e) => ({ slug: e.slug }));
@@ -26,6 +28,12 @@ export async function generateMetadata({
   return {
     title: exp.title,
     description: exp.shortDescription,
+    openGraph: {
+      title: exp.title,
+      description: exp.shortDescription,
+      images: exp.thumbnail ? [exp.thumbnail] : [],
+      type: "article",
+    },
   };
 }
 
@@ -40,6 +48,14 @@ export default async function ExperienceDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <ExperienceJsonLd experience={experience} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", href: "/" },
+          { name: "Experiences", href: "/experiences" },
+          { name: experience.title, href: `/experiences/${experience.slug}` },
+        ]}
+      />
       {/* Breadcrumb */}
       <Link
         href="/experiences"
@@ -53,12 +69,15 @@ export default async function ExperienceDetailPage({
         {/* Main content */}
         <div className="lg:col-span-2">
           {/* Image */}
-          <div className="aspect-video bg-cream-dark rounded-2xl overflow-hidden mb-6">
+          <div className="aspect-video bg-cream-dark rounded-2xl overflow-hidden mb-6 relative">
             {experience.thumbnail ? (
-              <img
+              <Image
                 src={experience.thumbnail}
                 alt={experience.title}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover"
+                priority
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange/20 to-navy/10">

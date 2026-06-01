@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getExperiences } from "@/lib/data";
+import { getExperiencesSlim } from "@/lib/data";
 import { SearchPageClient } from "@/components/SearchPageClient";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function SearchPage() {
-  const allExperiences = getExperiences();
+  const allExperiences = getExperiencesSlim();
 
   return (
     <Suspense>

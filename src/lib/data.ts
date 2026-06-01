@@ -38,8 +38,8 @@ function rowToExperience(row: Record<string, unknown>): Experience {
       score: (row.avg_rating as number) || 0,
       count: (row.total_review_count as number) || 0,
     },
-    images: row.hero_image_url ? [row.hero_image_url as string] : [],
-    thumbnail: (row.hero_image_url as string) || "",
+    images: row.hero_image_url ? [fixImageUrl(row.hero_image_url as string)] : [],
+    thumbnail: fixImageUrl(row.hero_image_url as string),
     location: {
       city: (row.dest_name as string) || "",
       citySlug: (row.dest_slug as string) || "",
@@ -60,6 +60,12 @@ function rowToExperience(row: Record<string, unknown>): Experience {
     isPopular: Boolean(row.is_popular),
     isFeatured: Boolean(row.is_featured),
   };
+}
+
+function fixImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("//")) return `https:${url}`;
+  return url;
 }
 
 function safeParseJSON<T>(str: string | null | undefined, fallback: T): T {
@@ -108,6 +114,15 @@ export function getExperiences(): Experience[] {
     .prepare(`${EXP_QUERY} ${EXP_GROUP} ORDER BY e.popularity_score DESC`)
     .all() as Record<string, unknown>[];
   return rows.map(rowToExperience);
+}
+
+/** Slim version for list pages — strips description/highlights to reduce payload */
+export function getExperiencesSlim(): Experience[] {
+  return getExperiences().map((e) => ({
+    ...e,
+    description: "",
+    highlights: [],
+  }));
 }
 
 export function getDestinations(): Destination[] {

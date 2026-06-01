@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import {
@@ -52,10 +53,12 @@ export default async function DestinationDetailPage({
       <div className="relative bg-gradient-to-br from-navy to-navy-light rounded-2xl p-8 md:p-12 mb-8 overflow-hidden">
         {destination.image && (
           <>
-            <img
+            <Image
               src={destination.image}
               alt={destination.name}
-              className="absolute inset-0 w-full h-full object-cover opacity-30"
+              fill
+              sizes="100vw"
+              className="object-cover opacity-30"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-navy/90 to-navy/60" />
           </>

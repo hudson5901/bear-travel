@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import type { Experience, Destination, Theme } from "@/lib/types";
+
+const PAGE_SIZE = 24;
 
 interface Props {
   allExperiences: Experience[];
@@ -15,6 +17,7 @@ interface Props {
 export function ExperiencesPageClient({ allExperiences, destinations, themes }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [page, setPage] = useState(1);
 
   const city = searchParams.get("city") || "";
   const theme = searchParams.get("theme") || "";
@@ -27,6 +30,7 @@ export function ExperiencesPageClient({ allExperiences, destinations, themes }: 
     } else {
       params.delete(key);
     }
+    setPage(1);
     router.push(`?${params.toString()}`);
   };
 
@@ -58,6 +62,28 @@ export function ExperiencesPageClient({ allExperiences, destinations, themes }: 
 
     return results;
   }, [allExperiences, city, theme, sort]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages || 1);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const goToPage = (p: number) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Build page number buttons (show max 7 with ellipsis)
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [1];
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    if (start > 2) pages.push("...");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  }, [totalPages, currentPage]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -130,7 +156,10 @@ export function ExperiencesPageClient({ allExperiences, destinations, themes }: 
             </div>
 
             <button
-              onClick={() => router.push("/experiences")}
+              onClick={() => {
+                setPage(1);
+                router.push("/experiences");
+              }}
               className="w-full py-2 text-sm text-orange hover:text-orange-light font-medium transition-colors"
             >
               Clear all filters
@@ -146,11 +175,54 @@ export function ExperiencesPageClient({ allExperiences, destinations, themes }: 
               <p className="text-navy/40 mt-2">Try adjusting your filters.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((exp) => (
-                <ExperienceCard key={exp.id} experience={exp} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paged.map((exp) => (
+                  <ExperienceCard key={exp.id} experience={exp} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <nav className="mt-10 flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                    className="p-2 rounded-lg text-navy/60 hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {pageNumbers.map((p, i) =>
+                    p === "..." ? (
+                      <span key={`ellipsis-${i}`} className="px-2 text-navy/40">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => goToPage(p)}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                          p === currentPage
+                            ? "bg-orange text-white"
+                            : "text-navy/60 hover:bg-cream"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                    className="p-2 rounded-lg text-navy/60 hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </nav>
+              )}
+            </>
           )}
         </div>
       </div>
