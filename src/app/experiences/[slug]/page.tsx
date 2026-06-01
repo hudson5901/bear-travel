@@ -144,6 +144,43 @@ export default async function ExperienceDetailPage({
               ))}
             </div>
           )}
+
+          {/* Map */}
+          <div className="mb-8">
+            <h2 className="font-heading text-xl font-semibold text-navy mb-4">
+              Location
+            </h2>
+            <div className="rounded-2xl overflow-hidden border border-cream-dark">
+              <iframe
+                title={`Map of ${experience.location.city}`}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(() => {
+                  const coords: Record<string, string> = {
+                    tokyo: "139.6,35.6,139.85,35.75",
+                    kyoto: "135.7,34.95,135.82,35.05",
+                    osaka: "135.45,34.6,135.55,34.72",
+                    hiroshima: "132.4,34.35,132.5,34.45",
+                    nara: "135.78,34.67,135.87,34.72",
+                    hakone: "139.0,35.2,139.1,35.28",
+                    nagano: "138.15,36.22,138.22,36.28",
+                    hokkaido: "141.3,43.02,141.4,43.1",
+                    okinawa: "127.65,26.3,127.72,26.37",
+                    fukuoka: "130.35,33.55,130.45,33.62",
+                    kamakura: "139.53,35.3,139.58,35.34",
+                    nikko: "139.6,36.74,139.67,36.78",
+                    kanazawa: "136.64,36.55,136.68,36.59",
+                    yokohama: "139.6,35.43,139.7,35.48",
+                    kobe: "135.17,34.67,135.22,34.72",
+                    niigata: "139.02,37.9,139.07,37.95",
+                  };
+                  return coords[experience.location.citySlug] || "139.6,35.6,139.85,35.75";
+                })()}&layer=mapnik`}
+                width="100%"
+                height="300"
+                style={{ border: 0 }}
+                loading="lazy"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Sidebar - Booking card */}
